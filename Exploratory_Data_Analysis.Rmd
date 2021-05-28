@@ -1,0 +1,383 @@
+
+
+```{r}
+df = read.csv("heart_failure_clinical_records_dataset.csv")
+head(df)
+```
+
+```{r}
+colnames(df)
+```
+
+```{r}
+df1 = df[, c('age', 'creatinine_phosphokinase', 
+    'ejection_fraction', 'platelets', 'serum_creatinine', 'serum_sodium')]
+```
+
+
+```{r}
+library(corrplot)
+```
+
+```{r}
+corrplot(cor(df), type = "upper")
+```
+
+```{r}
+head(df1)
+```
+
+
+```{r}
+library(tm)
+```
+
+```{r}
+library(plyr)
+```
+
+```{r}
+library(Hmisc)
+```
+
+
+```{r}
+hist.data.frame(df1, title = "Histograms of all Numerical Variables")
+```
+
+```{r}
+summary(df1)
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+colnames(df)
+```
+
+```{r}
+df2 = df[, c('anaemia', 'diabetes', 'high_blood_pressure', 'sex', 'smoking', 'DEATH_EVENT')]
+head(df2)
+```
+
+```{r}
+table(df2$sex, df2$DEATH_EVENT)
+```
+
+```{r}
+df$death = ifelse(df$DEATH_EVENT == 1, "Yes", "No")
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+df$sex = ifelse(df$sex == 1, "Male", "Female")
+```
+
+```{r}
+table(df$sex, df$death)
+```
+
+
+```{r}
+df$smoking1 = ifelse(df$smoking == 1, "Yes", "No")
+```
+
+
+```{r}
+head(df)
+```
+
+```{r}
+ggplot(df) + geom_point(aes(x = serum_creatinine, y = serum_sodium, colour = death, shape = death)) + ggtitle("Serum Creatinine vs Serum Sodium")
+```
+
+```{r}
+df_scr = df[df$serum_creatinine < 4.0 & df$serum_sodium > 120,]
+ggplot(df_scr) + geom_point(aes(x = serum_creatinine, y = serum_sodium, colour = death, shape = death)) + ggtitle("Serum Creatinine vs Serum Sodium")
+```
+
+
+```{r}
+ggplot(df, aes(death, time))+geom_point() + labs(title="Death Event with Time Variable Segregated by Gender",
+                                                 x = "Death",
+                                                 y = "Time") +
+  geom_boxplot(fill='steelblue', col="black", notch=TRUE) + facet_wrap(~ sex)
+```
+
+```{r}
+ggplot(df, aes(x = age)) + 
+  geom_histogram(fill = "white", colour = "black") + 
+  facet_grid(sex ~ .)
+```
+
+
+```{r}
+ggplot(df, aes(x = age)) + 
+  geom_histogram(fill = "white", colour = "black") + 
+  facet_grid(smoking1 ~ .)
+```
+
+```{r}
+table(df$sex, df$death)
+```
+
+```{r}
+data = table(df$sex)
+```
+
+```{r}
+data1 = round(data/sum(data)*100)
+```
+
+```{r}
+data1 = paste(names(data1), data1)
+```
+
+```{r}
+paste(data1, "%", sep = "")
+```
+
+```{r}
+ggplot(df[df$ejection_fraction < 70,], aes(x=death, y = ejection_fraction)) + geom_jitter(width=0.1)+ ggtitle("Death event vs Ejection Fraction") + 
+         stat_summary(aes(x = death, y = ejection_fraction), fun = median, geom='point', colour = "red", size = 3)
+```
+
+```{r}
+ggplot(df, aes(x=smoking1, y = creatinine_phosphokinase)) + geom_jitter(width=0.1)+ 
+  labs(title = "Creatinine Phosphokinase vs Smoking  Segregated by Death Event",
+       x = "Smoking",
+       y = "Creatinine Phosphokinase") + 
+         stat_summary(aes(x=smoking1, y = creatinine_phosphokinase), fun = mean, geom='point', colour = "red", size = 3) + facet_wrap(~death)
+```
+
+```{r}
+df_ph = df[df$creatinine_phosphokinase < 3000, ]
+```
+
+
+```{r}
+ggplot(df_ph, aes(x=smoking1, y = creatinine_phosphokinase)) + geom_jitter(width=0.1)+
+         stat_summary(aes(x=smoking1, y = creatinine_phosphokinase), fun = mean, geom='point', colour = "red", size = 3) + facet_wrap(~death)
+```
+
+```{r}
+ggplot(df_ph, aes(x=death, y = creatinine_phosphokinase)) + geom_jitter(width=0.1)+
+         stat_summary(aes(x=death, y = creatinine_phosphokinase), fun = mean, geom='point', colour = "red", size = 3) 
+```
+
+
+```{r}
+ggplot(df, aes(x=creatinine_phosphokinase, fill=death)) + geom_histogram(bins=20)+facet_wrap(~anaemia) + labs(title = "Distribution of Creatinine Phosphokinase", x = "Creatinine Phosphokinase", y = "Count")
+```
+
+```{r}
+ggplot(df, aes(x=creatinine_phosphokinase, fill=death)) + geom_histogram(bins=20) + labs(title = "Distribution of Creatinine Phosphokinase", x = "Creatinine Phosphokinase", y = "Count")
+```
+
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+death_sex = df %>% group_by(death, sex) 
+death_sex %>% summarise(
+  n = n()
+)
+```
+
+
+```{r}
+head(df)
+```
+
+```{r}
+colnames(df)
+```
+
+
+```{r}
+ggplot(df, aes(x = age, y = time, col = death))+geom_point() + labs(title = "Age vs Time", x = "Age", y = "Time")
+```
+
+```{r}
+ggplot(df, aes(x = serum_creatinine, fill = death))+geom_histogram() + labs(title = "Distribution of Serum Creatinine different colors for death event", x = "Serum Creatinine", y = "Count")
+```
+
+```{r}
+df_sc = df[df$serum_creatinine < 4.0,]
+```
+
+```{r}
+ggplot(df_sc, aes(x = serum_creatinine, fill = death))+geom_histogram() + labs(title = "Distribution of Serum Creatinine different colors for death event", x = "Serum Creatinine", y = "Count")
+```
+
+```{r}
+ggplot(df, aes(death, ejection_fraction, fill = as.factor(sex))) + 
+  geom_bar(stat = "summary", fun = "median", col = "black",
+           position = "dodge") + geom_point(position = position_dodge(0.9)) + labs(title = "Ejection Fraction per Death Event", x = "Death", y = "Ejection Fraction")
+```
+
+
+```{r}
+ggplot(df, aes(x = as.factor(anaemia), y = creatinine_phosphokinase, fill = death)) + geom_violin() +
+  stat_summary(aes(x= as.factor(anaemia), y = creatinine_phosphokinase), fun = median, geom='point', colour = "red", size = 3)+facet_wrap(~death)+
+geom_jitter(position = position_jitter(0.1), alpha = 0.2) + labs(title = "Creatinine Phosphokinase for Anaemia State Segregated by Death Event", x = "Anaemia", y ="Creatinine Phosphokinase")
+```
+
+```{r}
+ggplot(df, aes(x = as.factor(anaemia), y = creatinine_phosphokinase, fill = death)) + geom_violin() +geom_boxplot(width = 0.1) + facet_wrap(~ death)
+```
+
+```{r}
+df$diabetes1 = ifelse(df$diabetes == 1, "Diabetes", "No Diabetes")
+```
+
+
+```{r}
+table(df$diabetes1, df$smoking1)
+```
+
+```{r}
+library(e1071)
+```
+
+```{r}
+colnames(df)
+```
+```{r}
+head(iris)
+```
+
+```{r}
+data = table(df$death)
+round(data/sum(data), 2)
+```
+
+
+```{r}
+table(df$death)
+```
+
+
+```{r}
+d = data.frame(df[, c("age", "creatinine_phosphokinase", "serum_sodium", "anaemia", "high_blood_pressure", "serum_creatinine", "time", "DEATH_EVENT")])
+d
+```
+
+```{r}
+nrow(df)
+```
+```{r}
+library(caTools)
+```
+
+```{r}
+set.seed(1243)
+split = sample.split(d$DEATH_EVENT, SplitRatio = 0.75)
+```
+
+```{r}
+training_data = subset(d, split == TRUE)
+test_data = subset(d, split == FALSE)
+```
+
+
+```{r}
+head(training_data)
+```
+
+```{r}
+length(d)
+```
+
+```{r}
+training_set = training_data[-8]
+test_set = test_data[-8]
+```
+
+```{r}
+library(e1071)
+```
+
+
+```{r}
+svm_fit = svm(formula = DEATH_EVENT ~ .,
+                 data = training_data,
+                 type = 'C-classification',
+                 kernel = 'linear'
+              )
+```
+
+
+```{r}
+y_pred = predict(svm_fit, newdata = test_data[-8])
+```
+
+
+```{r}
+library(caret)
+```
+
+
+```{r}
+confusionMatrix(y_pred, as.factor(test_data$DEATH_EVENT))
+```
+
+```{r}
+df1 = read.csv("heart_failure_clinical_records_dataset.csv")
+head(df1)
+```
+
+
+```{r}
+training_data = subset(df1, split == TRUE)
+test_data = subset(df1, split == FALSE)
+```
+
+```{r}
+svm_fit = svm(formula = DEATH_EVENT ~ .,
+                 data = training_data,
+                 type = 'C-classification',
+                 kernel = 'linear'
+              )
+```
+
+```{r}
+length(df1)
+```
+
+
+```{r}
+y_pred = predict(svm_fit, newdata = test_data[-13])
+```
+
+```{r}
+confusionMatrix(y_pred, as.factor(test_data$DEATH_EVENT))
+```
+
+```{r}
+y_pred1 = predict(svm_fit, newdata = training_data[-13])
+```
+
+```{r}
+confusionMatrix(y_pred, as.factor(test_data$DEATH_EVENT))
+```
+
+```{r}
+true_positive = 19
+false_positive = 4
+false_negative = 5
+```
+
+
+```{r}
+true_positive/(true_positive + 0.5*(false_positive + false_negative))
+```
+
