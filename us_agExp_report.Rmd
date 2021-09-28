@@ -1,0 +1,154 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+
+```{r}
+us_ag = read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2011_us_ag_exports.csv")
+head(us_ag)
+```
+
+```{r}
+library(ggplot2)
+library(psych)
+```
+
+
+```{r}
+corr_data = us_ag[, c("pork", "beef", "poultry", "dairy", "total.fruits", 
+"total.veggies", "corn", "wheat", "cotton")]
+```
+
+
+```{r fig.height= 8, fig.width=8}
+corPlot(corr_data, cex = 0.8, main="Corrlation Between Export Items",
+        las = 2)
+```
+
+```{r}
+us_ag$exports_z = round((us_ag$total.exports - mean(us_ag$total.exports))/sd(us_ag$total.exports), 2)
+
+us_ag$export_level = ifelse(us_ag$exports_z < 0, "below", "above")
+us_ag_sorted = us_ag[order(us_ag$exports_z),]
+
+us_ag_sorted$state = factor(us_ag_sorted$state, levels=us_ag_sorted$state)
+```
+
+```{r fig.height=11, fig.width=6}
+ggplot(us_ag_sorted, aes(x = state, y = exports_z, label=exports_z)) + 
+  geom_point(stat = 'identity', aes(col=export_level), size=7) + 
+  scale_color_manual(name="Exports",
+                     labels = c("Above Average", "Below Average"),
+                     values = c("above"="#00ba38", "below"="#f8766d"))+
+  geom_text(color="white", size = 2) +
+  labs(title="Diverging Bar Plot Showing Normalized Total Exports",
+       y = "Normalized Total Exports",
+       x = NULL) +
+  ylim(-2, 5)+
+  coord_flip() 
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+```
+
+
+```{r fig.height=12, fig.width=14}
+p1 = us_ag %>% select(state, beef, pork, poultry) %>%
+  pivot_longer(., cols = c(beef, pork, poultry),
+               values_to="Val") %>%
+  ggplot(aes(x = state, y = Val, color=name, alpha = 0.7))+
+  geom_point(size = 4) + 
+  scale_color_manual(values = c("beef" = "black", "pork" = "red", "poultry" = "green")) +
+  geom_line(aes(group=name)) + 
+  theme(axis.text.x = element_text(angle = 90)) + 
+  guides(alpha="none")+
+  labs(x = NULL,
+       y = "Exports",
+       title = "Beef, Pork, and Poultry Exports of States")
+
+p2 = us_ag %>% select(state, total.fruits, total.veggies, dairy) %>%
+  pivot_longer(., cols = c(total.fruits, total.veggies, dairy),
+               values_to="Val") %>%
+  ggplot(aes(state, Val, fill = name)) + geom_col(width = 0.9)+
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(x = NULL,
+       y = "Exports",
+       title = "Dairy, Fruits, and Vegetables Exports of States")
+
+p3 = us_ag %>% select(state, corn, cotton, wheat) %>%
+  pivot_longer(., cols = c(corn, cotton, wheat),
+               values_to="Val") %>%
+  ggplot(aes(state, Val, fill = name)) + geom_col(width = 0.9)+
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(x = NULL,
+       y = "Exports",
+       title = "Corn, Cotton, and Wheat Exports of States")
+
+ggarrange(p1, p2, p3, nrow=3)
+```
+
+```{r}
+library(usmap)
+```
+
+
+```{r}
+latlong = read.csv("statelatlong.csv")
+head(latlong)
+```
+
+```{r}
+latlong = rename(latlong, c("code" = "State"))
+latlong = subset(latlong, select=-c(City))
+```
+
+```{r}
+latlong1 = latlong[, c(3, 2, 1)]
+```
+
+
+```{r}
+us_ag_ll = merge(latlong, us_ag, by = "code")
+```
+
+```{r}
+head(us_ag_ll)
+```
+
+
+```{r}
+df = us_ag[, c("beef", "pork", "poultry", "dairy", "total.fruits", "total.veggies", "corn", "wheat", "cotton")]
+```
+
+
+```{r}
+df$max_val = apply(X=df, MARGIN = 1, FUN = max)
+df$maxExportItem= colnames(df)[apply(df,1,which.max)]
+```
+
+```{r}
+us_ag_ll$max_export_item = df$maxExportItem
+us_ag_ll$max_val = df$max_val
+us_ag_ll$Max_Export_Val = paste(us_ag_ll$max_export_item, us_ag_ll$max_val, sep="-")
+```
+
+```{r}
+transformed = usmap_transform(us_ag_ll[, c("Longitude", "Latitude")])
+```
+
+```{r fig.height=12}
+plot_usmap(data = us_ag_ll, values = "total.exports", color = "blue")+
+  geom_text(data=us_ag_ll, aes(x = transformed$Longitude.1,
+                                y = transformed$Latitude.1, 
+                                label = Max_Export_Val), size=3.5, color = "#4f4b4b")+
+  scale_fill_continuous(low = "white", high = "blue", name = "Total Exports", label = scales::comma) + 
+  labs(title = "Total Exports in Color in Each State", subtitle = "Top Exports Items and Export Values of Each State")+
+  theme(legend.position = "bottom", plot.title = element_text(size = 20, face = "bold"),
+        plot.subtitle = element_text(size = 18))
+```
+
